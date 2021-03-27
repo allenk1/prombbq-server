@@ -1,0 +1,94 @@
+version: "3"
+# Create Monitoring Network
+networks:
+  prombbq:
+    driver: bridge
+
+# Persistent Volumes
+volumes:
+    prometheus_data: {}
+    grafana_data: {}
+
+# Services to run
+services:
+  prometheus:
+    image: prom/prometheus:v2.25.2
+    container_name: prometheus
+    volumes:
+      - ./configuration/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    expose:
+      - 9090
+    networks:
+      - prombbq
+
+  pushgateway:
+    image: prom/pushgateway:v1.4.0
+    container_name: pushgateway
+    restart: unless-stopped
+    expose:
+      - 9091
+    networks:
+      - prombbq
+  
+  alertmanager:
+    image: prom/alertmanager:v0.21.0
+    container_name: alertmanager
+    volumes:
+      - ./configuration/alertmanager:/etc/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    restart: unless-stopped
+    expose:
+      - 9093
+    networks:
+      - prombbq
+
+  grafana:
+    image: grafana/grafana:7.5.1-ubuntu
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./configuration/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./configuration/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+    environment:
+      - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+    expose:
+      - 3000
+    networks:
+      - prombbq
+
+  nginx: 
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    depends_on:
+      - prometheus
+      - pushgateway
+      - alertmanager
+      - grafana
+    volumes:
+      - ./configuration/nginx/auth:/etc/nginx/auth:ro
+      - ./configuration/nginx/conf.d:/etc/nginx/conf.d:ro
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - prombbq
+    links:
+      - prometheus:prometheus
+      - pushgateway:pushgateway
+      - alertmanager:alertmanager
+      - grafana:grafana
