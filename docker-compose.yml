@@ -82,6 +82,8 @@ services:
     volumes:
       - ./configuration/nginx/auth:/etc/nginx/auth:ro
       - ./configuration/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./configuration/certbot/conf:/etc/nginx/ssl
+      - ./configuration/certbot/data:/var/www/certbot
     ports:
       - 80:80
       - 443:443
@@ -92,3 +94,12 @@ services:
       - pushgateway:pushgateway
       - alertmanager:alertmanager
       - grafana:grafana
+
+  certbot:
+    image:  certbot/certbot:latest
+    container_name: certbot
+    command: certonly --webroot --webroot-path=/var/www/certbot --email <your-eail-address> --agree-tos --no-eff-email -d <website_fqdn> -d www.<website_fqdn>
+    volumes:
+      - ./configuration/certbot/conf:/etc/letsencrypt
+      - ./configuration/certbot/logs:/var/log/letsencrypt
+      - ./configuration/certbot/data:/var/www/certbot
