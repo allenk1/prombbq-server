@@ -15,15 +15,15 @@ This leverages CertBot for the SSL certificate. In order for this to work you mu
 2. Update lines `23` & `24` of `configuration/nginx/conf.d/prombbq.conf`
 
 ```
-ssl_certificate /etc/letsencrypt/live/<website_fqdn>/fullchain.pem;
-ssl_certificate_key /etc/letsencrypt/live/<website_fqdn>/privkey.pem;
+ssl_certificate /etc/nginx/ssl/live/<website_fqdn>/fullchain.pem;
+ssl_certificate_key /etc/nginx/ssl/live/<website_fqdn>/privkey.pem;
 ```
 
 Example
 
 ```
-ssl_certificate /etc/letsencrypt/live/prombbq.kolbyallen.com/fullchain.pem;
-ssl_certificate_key /etc/letsencrypt/live/prombbq.kolbyallen.com/privkey.pem;
+ssl_certificate /etc/nginx/ssl/live/prombbq.kolbyallen.com/fullchain.pem;
+ssl_certificate_key /etc/nginx/ssl/live/prombbq.kolbyallen.com/privkey.pem;
 ```
 
 3. Update line `99` in `docker-compose.yml`
